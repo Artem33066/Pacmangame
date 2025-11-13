@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Пакман для смартфона</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: 'Arial Rounded MT Bold', 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 10px;
+            overflow-x: hidden;
+            touch-action: manipulation;
+        }
+        
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 500px;
+            flex: 1;
+            justify-content: flex-start;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 10px;
+            width: 100%;
+        }
+        
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 5px;
+            color: #FFD700;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.7);
+            letter-spacing: 2px;
+        }
+        
+        .subtitle {
+            font-size: 0.9rem;
+            color: #aaa;
+            margin-bottom: 10px;
+        }
+        
+        .game-controls {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 10px;
+            gap: 10px;
+        }
+        
+        .game-btn {
+            padding: 12px 0;
+            background: linear-gradient(135deg, #FF5722 0%, #FF9800 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            box-shadow: 0 4px 0 #C41C00, 0 6px 8px rgba(0, 0, 0, 0.4);
+            transition: all 0.1s;
+            flex: 1;
+            text-align: center;
+        }
+        
+        .game-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 #C41C00, 0 2px 4px rgba(0, 0, 0, 0.4);
+        }
+        
+        .game-btn.secondary {
+            background: linear-gradient(135deg, #2196F3 0%, #21CBF3 100%);
+            box-shadow: 0 4px 0 #0B5F9E, 0 6px 8px rgba(0, 0, 0, 0.4);
+        }
+        
+        .game-btn.secondary:active {
+            box-shadow: 0 0 0 #0B5F9E, 0 2px 4px rgba(0, 0, 0, 0.4);
+        }
+        
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 8px 12px;
+            border-radius: 10px;
+            border: 2px solid #333;
+            font-size: 1rem;
+        }
+        
+        .game-board-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto 15px;
+        }
+        
+        .game-board {
+            position: relative;
+            width: 100%;
+            height: 0;
+            padding-bottom: 100%; /* Квадратное поле */
+            background-color: #000;
+            border: 3px solid #333;
+            border-radius: 5px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.7);
+        }
+        
+        /* Пакман в игре */
+        .pacman {
+            position: absolute;
+            width: 5%;
+            height: 5%;
+            z-index: 10;
+            transition: left 0.15s linear, top 0.15s linear;
+        }
+        
+        .pacman-body {
+            width: 100%;
+            height: 100%;
+            background-color: #FFD700;
+            border-radius: 50%;
+            position: relative;
+            box-shadow: 0 0 8px #FFD700, 0 0 15px rgba(255, 215, 0, 0.5);
+            overflow: hidden;
+        }
+        
+        .pacman-eye {
+            position: absolute;
+            width: 20%;
+            height: 20%;
+            background-color: #000;
+            border-radius: 50%;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2;
+        }
+        
+        .pacman-mouth {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            clip-path: polygon(100% 74%, 44% 48%, 100% 24%);
+            border-radius: 50%;
+            animation: chew 0.3s infinite alternate;
+        }
+        
+        /* Призраки */
+        .ghost {
+            position: absolute;
+            width: 5%;
+            height: 5%;
+            z-index: 9;
+            transition: left 0.25s linear, top 0.25s linear;
+        }
+        
+        .ghost-body {
+            width: 100%;
+            height: 85%;
+            border-radius: 50% 50% 0 0;
+            position: relative;
+            box-shadow: 0 0 8px currentColor;
+        }
+        
+        .ghost-red .ghost-body { 
+            background-color: #FF0000; 
+            color: #FF0000;
+        }
+        
+        .ghost-pink .ghost-body { 
+            background-color: #FFB8FF; 
+            color: #FFB8FF;
+        }
+        
+        .ghost-blue .ghost-body { 
+            background-color: #00FFFF; 
+            color: #00FFFF;
+        }
+        
+        .ghost-orange .ghost-body { 
+            background-color: #FFB852; 
+            color: #FFB852;
+        }
+        
+        .ghost-scared .ghost-body { 
+            background-color: #2121FF; 
+            color: #2121FF;
+            animation: scared 1s infinite alternate;
+        }
+        
+        .ghost-face {
+            position: absolute;
+            top: 25%;
+            width: 100%;
+            display: flex;
+            justify-content: space-around;
+        }
+        
+        .ghost-eye {
+            width: 25%;
+            height: 25%;
+            background-color: white;
+            border-radius: 50%;
+            position: relative;
+            box-shadow: 0 0 3px white;
+        }
+        
+        .ghost-pupil {
+            position: absolute;
+            width: 50%;
+            height: 50%;
+            background-color: #0000AA;
+            border-radius: 50%;
+            top: 25%;
+            left: 25%;
+            transition: all 0.2s;
+        }
+        
+        .ghost-scared .ghost-pupil {
+            background-color: white;
+            transform: scale(0.8);
+        }
+        
+        .ghost-mouth {
+            position: absolute;
+            bottom: 15%;
+            width: 40%;
+            height: 10%;
+            background-color: white;
+            border-radius: 5px;
+            left: 30%;
+        }
+        
+        .ghost-skirt {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 15%;
+            display: flex;
+        }
+        
+        .ghost-skirt-part {
+            flex: 1;
+            background-color: inherit;
+            clip-path: polygon(0 0, 100% 0, 80% 100%, 20% 100%);
+        }
+        
+        /* Точки и энерджайзеры */
+        .dot {
+            position: absolute;
+            width: 1.5%;
+            height: 1.5%;
+            background-color: #FFFFFF;
+            border-radius: 50%;
+            box-shadow: 0 0 5px #FFFFFF;
+        }
+        
+        .power-pellet {
+            position: absolute;
+            width: 3%;
+            height: 3%;
+            background-color: #FFFFFF;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #FFFFFF, 0 0 15px rgba(255, 255, 255, 0.7);
+            animation: power-pulse 1.5s infinite alternate;
+        }
+        
+        /* Стены */
+        .wall {
+            position: absolute;
+            background: linear-gradient(135deg, #0000FF 0%, #4A4AFF 100%);
+            box-shadow: inset 0 0 10px rgba(0, 0, 255, 0.5);
+        }
+        
+        /* Управление */
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+            width: 220px;
+            height: 220px;
+        }
+        
+        .control-btn {
+            background: linear-gradient(135deg, #333 0%, #555 100%);
+            border: none;
+            color: white;
+            font-size: 32px;
+            border-radius: 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 0 #222, 0 6px 8px rgba(0, 0, 0, 0.4);
+            transition: all 0.1s;
+            user-select: none;
+        }
+        
+        .control-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 #222, 0 2px 4px rgba(0, 0, 0, 0.4);
+        }
+        
+        #up { grid-column: 2; grid-row: 1; }
+        #left { grid-column: 1; grid-row: 2; }
+        #right { grid-column: 3; grid-row: 2; }
+        #down { grid-column: 2; grid-row: 2; } /* Перемещена выше */
+        
+        /* Сообщения игры */
+        .game-message {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+            border-radius: 5px;
+            text-align: center;
+            padding: 20px;
+            display: none;
+        }
+        
+        .game-message h2 {
+            font-size: 2.2rem;
+            margin-bottom: 20px;
+            color: #FFD700;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.7);
+        }
+        
+        .game-message p {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+        }
+        
+        /* Анимации */
+        @keyframes chew {
+            0% { clip-path: polygon(100% 74%, 44% 48%, 100% 24%); }
+            100% { clip-path: polygon(100% 50%, 44% 48%, 100% 50%); }
+        }
+        
+        @keyframes power-pulse {
+            0% { transform: scale(1); opacity: 1; box-shadow: 0 0 8px #FFFFFF, 0 0 15px rgba(255, 255, 255, 0.7); }
+            100% { transform: scale(1.5); opacity: 0.6; box-shadow: 0 0 15px #FFFFFF, 0 0 25px rgba(255, 255, 255, 0.9); }
+        }
+        
+        @keyframes scared {
+            0% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+        
+        /* Адаптивность */
+        @media (max-height: 700px) {
+            .container {
+                justify-content: flex-start;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .game-info {
+                font-size: 0.9rem;
+                padding: 6px 10px;
+            }
+            
+            .controls {
+                width: 200px;
+                height: 200px;
+                margin-top: 5px;
+            }
+            
+            .control-btn {
+                font-size: 28px;
+            }
+        }
+        
+        @media (max-width: 400px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .game-info {
+                font-size: 0.9rem;
+            }
+            
+            .controls {
+                width: 200px;
+                height: 200px;
+            }
+            
+            .control-btn {
+                font-size: 28px;
+            }
+            
+            .game-btn {
+                padding: 10px 0;
+                font-size: 0.9rem;
+            }
+        }
+        
+        @media (max-width: 350px) {
+            h1 {
+                font-size: 1.6rem;
+            }
+            
+            .controls {
+                width: 180px;
+                height: 180px;
+            }
+            
+            .control-btn {
+                font-size: 24px;
+            }
+        }
+        
+        /* Гарантия, что все помещается на экране */
+        @media (max-height: 600px) {
+            .game-board-container {
+                max-width: 300px;
+            }
+            
+            .controls {
+                width: 180px;
+                height: 180px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ПАКМАН</h1>
+            <div class="subtitle">Собери все точки и избегай призраков!</div>
+        </div>
+        
+        <div class="game-controls">
+            <button class="game-btn" id="startBtn">Начать игру</button>
+            <button class="game-btn secondary" id="pauseBtn">Пауза</button>
+        </div>
+        
+        <div class="game-info">
+            <div>Очки: <span id="score">0</span></div>
+            <div>Жизни: <span id="lives">3</span></div>
+            <div>Уровень: <span id="level">1</span></div>
+        </div>
+        
+        <div class="game-board-container">
+            <div class="game-board" id="gameBoard">
+                <!-- Игровые элементы будут добавлены через JavaScript -->
+            </div>
+            
+            <div class="game-message" id="gameOver">
+                <h2>ИГРА ОКОНЧЕНА</h2>
+                <p>Ваш счет: <span id="finalScore">0</span></p>
+                <button class="game-btn" id="restartBtn">Играть снова</button>
+            </div>
+            
+            <div class="game-message" id="gameWon">
+                <h2>ПОБЕДА!</h2>
+                <p>Уровень пройден!</p>
+                <button class="game-btn" id="nextLevelBtn">Следующий уровень</button>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button class="control-btn" id="up">↑</button>
+            <button class="control-btn" id="left">←</button>
+            <button class="control-btn" id="right">→</button>
+            <button class="control-btn" id="down">↓</button>
+        </div>
+    </div>
+
+    <script>
+        // Конфигурация игры
+        const config = {
+            cellSize: 5, // в процентах от размера поля
+            rows: 19,
+            cols: 19,
+            speed: 180,
+            ghostSpeed: 350,
+            level: 1
+        };
+
+        // Состояние игры
+        let gameState = {
+            score: 0,
+            lives: 3,
+            level: 1,
+            gameRunning: false,
+            gamePaused: false,
+            pacman: { x: 1, y: 1, direction: 'right' },
+            ghosts: [
+                { x: 9, y: 8, direction: 'left', color: 'red' },
+                { x: 8, y: 9, direction: 'up', color: 'pink' },
+                { x: 9, y: 9, direction: 'right', color: 'blue' },
+                { x: 10, y: 9, direction: 'down', color: 'orange' }
+            ],
+            dots: [],
+            powerPellets: [],
+            walls: [],
+            scaredTimer: 0
+        };
+
+        // Лабиринт с энерджайзерами
+        const maze = [
+            "###################",
+            "#........#........#",
+            "#.###.#.#.#.###.##",
+            "#.#...#.#...#.#..#",
+            "#.#.###.#.###.#.##",
+            "#.....O.......O...#",
+            "#.#.#.#.#.#.#.#.#.#",
+            "#.#.#.#.#.#.#.#.#.#",
+            "#.....#.....#.....#",
+            "#####.# ### #.#####",
+            "    #.#     #.#    ",
+            "#####.# ### #.#####",
+            "#........#........#",
+            "#.#.#.#.#.#.#.#.#.#",
+            "#.#.#.#.#.#.#.#.#.#",
+            "#.....#.....#.....#",
+            "#.#.###.#.###.#.##",
+            "#.....O.......O...#",
+            "###################"
+        ];
+
+        // Инициализация игры
+        function initGame() {
+            const gameBoard = document.getElementById('gameBoard');
+            gameBoard.innerHTML = '';
+            
+            // Создание лабиринта
+            createMaze();
+            
+            // Создание Пакмана
+            createPacman();
+            
+            // Создание призраков
+            createGhosts();
+            
+            // Обновление интерфейса
+            updateUI();
+        }
+
+        // Создание лабиринта
+        function createMaze() {
+            const gameBoard = document.getElementById('gameBoard');
+            gameState.dots = [];
+            gameState.powerPellets = [];
+            gameState.walls = [];
+            
+            for (let y = 0; y < config.rows; y++) {
+                for (let x = 0; x < config.cols; x++) {
+                    const cell = maze[y] ? maze[y][x] : ' ';
+                    
+                    if (cell === '#') {
+                        // Стена
+                        const wall = document.createElement('div');
+                        wall.className = 'wall';
+                        wall.style.width = config.cellSize + '%';
+                        wall.style.height = config.cellSize + '%';
+                        wall.style.left = (x * config.cellSize) + '%';
+                        wall.style.top = (y * config.cellSize) + '%';
+                        gameBoard.appendChild(wall);
+                        gameState.walls.push({x, y});
+                    } else if (cell === '.') {
+                        // Точка
+                        const dot = document.createElement('div');
+                        dot.className = 'dot';
+                        dot.style.left = (x * config.cellSize + config.cellSize/2 - 0.75) + '%';
+                        dot.style.top = (y * config.cellSize + config.cellSize/2 - 0.75) + '%';
+                        gameBoard.appendChild(dot);
+                        gameState.dots.push({x, y, element: dot});
+                    } else if (cell === 'O') {
+                        // Энерджайзер
+                        const powerPellet = document.createElement('div');
+                        powerPellet.className = 'power-pellet';
+                        powerPellet.style.left = (x * config.cellSize + config.cellSize/2 - 1.5) + '%';
+                        powerPellet.style.top = (y * config.cellSize + config.cellSize/2 - 1.5) + '%';
+                        gameBoard.appendChild(powerPellet);
+                        gameState.powerPellets.push({x, y, element: powerPellet});
+                    }
+                }
+            }
+        }
+
+        // Создание Пакмана
+        function createPacman() {
+            const gameBoard = document.getElementById('gameBoard');
+            const pacman = document.createElement('div');
+            pacman.id = 'pacman';
+            pacman.className = 'pacman';
+            pacman.style.left = (gameState.pacman.x * config.cellSize) + '%';
+            pacman.style.top = (gameState.pacman.y * config.cellSize) + '%';
+            
+            const pacmanBody = document.createElement('div');
+            pacmanBody.className = 'pacman-body';
+            
+            const pacmanEye = document.createElement('div');
+            pacmanEye.className = 'pacman-eye';
+            
+            const pacmanMouth = document.createElement('div');
+            pacmanMouth.className = 'pacman-mouth';
+            
+            pacmanBody.appendChild(pacmanEye);
+            pacmanBody.appendChild(pacmanMouth);
+            pacman.appendChild(pacmanBody);
+            gameBoard.appendChild(pacman);
+            
+            // Устанавливаем начальное направление
+            updatePacmanDirection();
+        }
+
+        // Обновление направления Пакмана
+        function updatePacmanDirection() {
+            const pacman = document.getElementById('pacman');
+            if (!pacman) return;
+            
+            let rotation = 0;
+            switch(gameState.pacman.direction) {
+                case 'right': rotation = 0; break;
+                case 'down': rotation = 90; break;
+                case 'left': rotation = 180; break;
+                case 'up': rotation = 270; break;
+            }
+            
+            pacman.style.transform = `rotate(${rotation}deg)`;
+        }
+
+        // Создание призраков
+        function createGhosts() {
+            const gameBoard = document.getElementById('gameBoard');
+            
+            gameState.ghosts.forEach((ghost, index) => {
+                const ghostElement = document.createElement('div');
+                ghostElement.id = 'ghost' + index;
+                ghostElement.className = 'ghost ghost-' + ghost.color;
+                
+                const ghostBody = document.createElement('div');
+                ghostBody.className = 'ghost-body';
+                
+                const ghostFace = document.createElement('div');
+                ghostFace.className = 'ghost-face';
+                
+                const leftEye = document.createElement('div');
+                leftEye.className = 'ghost-eye';
+                const leftPupil = document.createElement('div');
+                leftPupil.className = 'ghost-pupil';
+                leftEye.appendChild(leftPupil);
+                
+                const rightEye = document.createElement('div');
+                rightEye.className = 'ghost-eye';
+                const rightPupil = document.createElement('div');
+                rightPupil.className = 'ghost-pupil';
+                rightEye.appendChild(rightPupil);
+                
+                ghostFace.appendChild(leftEye);
+                ghostFace.appendChild(rightEye);
+                
+                const ghostMouth = document.createElement('div');
+                ghostMouth.className = 'ghost-mouth';
+                
+                const ghostSkirt = document.createElement('div');
+                ghostSkirt.className = 'ghost-skirt';
+                
+                for (let i = 0; i < 3; i++) {
+                    const skirtPart = document.createElement('div');
+                    skirtPart.className = 'ghost-skirt-part';
+                    ghostSkirt.appendChild(skirtPart);
+                }
+                
+                ghostBody.appendChild(ghostFace);
+                ghostBody.appendChild(ghostMouth);
+                ghostBody.appendChild(ghostSkirt);
+                ghostElement.appendChild(ghostBody);
+                
+                ghostElement.style.left = (ghost.x * config.cellSize) + '%';
+                ghostElement.style.top = (ghost.y * config.cellSize) + '%';
+                
+                gameBoard.appendChild(ghostElement);
+            });
+        }
+
+        // Обновление интерфейса
+        function updateUI() {
+            document.getElementById('score').textContent = gameState.score;
+            document.getElementById('lives').textContent = gameState.lives;
+            document.getElementById('level').textContent = gameState.level;
+            
+            // Обновление состояния призраков (испуганные или нет)
+            gameState.ghosts.forEach((ghost, index) => {
+                const ghostElement = document.getElementById('ghost' + index);
+                if (ghostElement) {
+                    if (gameState.scaredTimer > 0) {
+                        ghostElement.classList.add('ghost-scared');
+                        ghostElement.classList.remove('ghost-red', 'ghost-pink', 'ghost-blue', 'ghost-orange');
+                    } else {
+                        ghostElement.classList.remove('ghost-scared');
+                        ghostElement.classList.add('ghost-' + ghost.color);
+                    }
+                }
+            });
+        }
+
+        // Движение Пакмана
+        function movePacman() {
+            if (!gameState.gameRunning || gameState.gamePaused) return;
+            
+            const newX = gameState.pacman.x;
+            const newY = gameState.pacman.y;
+            
+            // Определение новой позиции на основе направления
+            switch(gameState.pacman.direction) {
+                case 'right': 
+                    if (!isWall(newX + 1, newY)) gameState.pacman.x++;
+                    break;
+                case 'left': 
+                    if (!isWall(newX - 1, newY)) gameState.pacman.x--;
+                    break;
+                case 'up': 
+                    if (!isWall(newX, newY - 1)) gameState.pacman.y--;
+                    break;
+                case 'down': 
+                    if (!isWall(newX, newY + 1)) gameState.pacman.y++;
+                    break;
+            }
+            
+            // Телепортация через туннели
+            if (gameState.pacman.x < 0) gameState.pacman.x = config.cols - 1;
+            if (gameState.pacman.x >= config.cols) gameState.pacman.x = 0;
+            
+            // Обновление позиции Пакмана на экране
+            const pacman = document.getElementById('pacman');
+            if (pacman) {
+                pacman.style.left = (gameState.pacman.x * config.cellSize) + '%';
+                pacman.style.top = (gameState.pacman.y * config.cellSize) + '%';
+            }
+            
+            // Проверка на сбор точек
+            checkDotCollection();
+            
+            // Проверка на столкновение с призраками
+            checkGhostCollision();
+            
+            // Обновление интерфейса
+            updateUI();
+        }
+
+        // Движение призраков
+        function moveGhosts() {
+            if (!gameState.gameRunning || gameState.gamePaused) return;
+            
+            gameState.ghosts.forEach((ghost, index) => {
+                // Простой ИИ для призраков
+                const directions = ['up', 'down', 'left', 'right'];
+                let newDirection = ghost.direction;
+                
+                // Случайное изменение направления с вероятностью 25%
+                if (Math.random() < 0.25) {
+                    newDirection = directions[Math.floor(Math.random() * directions.length)];
+                }
+                
+                // Проверка, можно ли двигаться в выбранном направлении
+                let newX = ghost.x;
+                let newY = ghost.y;
+                
+                switch(newDirection) {
+                    case 'right': newX++; break;
+                    case 'left': newX--; break;
+                    case 'up': newY--; break;
+                    case 'down': newY++; break;
+                }
+                
+                if (!isWall(newX, newY)) {
+                    ghost.x = newX;
+                    ghost.y = newY;
+                    ghost.direction = newDirection;
+                }
+                
+                // Телепортация через туннели
+                if (ghost.x < 0) ghost.x = config.cols - 1;
+                if (ghost.x >= config.cols) ghost.x = 0;
+                
+                // Обновление позиции призрака на экране
+                const ghostElement = document.getElementById('ghost' + index);
+                if (ghostElement) {
+                    ghostElement.style.left = (ghost.x * config.cellSize) + '%';
+                    ghostElement.style.top = (ghost.y * config.cellSize) + '%';
+                }
+            });
+            
+            // Проверка на столкновение с призраками
+            checkGhostCollision();
+        }
+
+        // Проверка на стену
+        function isWall(x, y) {
+            return gameState.walls.some(wall => wall.x === x && wall.y === y);
+        }
+
+        // Проверка сбора точек
+        function checkDotCollection() {
+            // Проверка обычных точек
+            const dotIndex = gameState.dots.findIndex(dot => 
+                dot.x === gameState.pacman.x && dot.y === gameState.pacman.y);
+            
+            if (dotIndex !== -1) {
+                gameState.score += 10;
+                gameState.dots[dotIndex].element.remove();
+                gameState.dots.splice(dotIndex, 1);
+            }
+            
+            // Проверка энерджайзеров
+            const pelletIndex = gameState.powerPellets.findIndex(pellet => 
+                pellet.x === gameState.pacman.x && pellet.y === gameState.pacman.y);
+            
+            if (pelletIndex !== -1) {
+                gameState.score += 50;
+                gameState.scaredTimer = 15; // 15 ходов призраки будут испуганными
+                gameState.powerPellets[pelletIndex].element.remove();
+                gameState.powerPellets.splice(pelletIndex, 1);
+            }
+            
+            // Проверка на победу (только если собраны все точки и энерджайзеры)
+            if (gameState.dots.length === 0 && gameState.powerPellets.length === 0) {
+                winGame();
+            }
+        }
+
+        // Проверка столкновения с призраками
+        function checkGhostCollision() {
+            gameState.ghosts.forEach(ghost => {
+                if (ghost.x === gameState.pacman.x && ghost.y === gameState.pacman.y) {
+                    if (gameState.scaredTimer > 0) {
+                        // Пакман съедает призрака
+                        gameState.score += 200;
+                        // Возвращаем призрака на стартовую позицию
+                        ghost.x = 8 + Math.floor(Math.random() * 3);
+                        ghost.y = 8 + Math.floor(Math.random() * 3);
+                    } else {
+                        // Призрак съедает Пакмана
+                        gameState.lives--;
+                        if (gameState.lives <= 0) {
+                            gameOver();
+                        } else {
+                            // Возвращаем Пакмана на стартовую позицию
+                            gameState.pacman.x = 1;
+                            gameState.pacman.y = 1;
+                            updatePacmanDirection();
+                        }
+                    }
+                }
+            });
+        }
+
+        // Уменьшение таймера испуга призраков
+        function updateScaredTimer() {
+            if (gameState.scaredTimer > 0) {
+                gameState.scaredTimer--;
+            }
+        }
+
+        // Конец игры
+        function gameOver() {
+            gameState.gameRunning = false;
+            document.getElementById('finalScore').textContent = gameState.score;
+            document.getElementById('gameOver').style.display = 'flex';
+            
+            if (gameState.gameInterval) clearInterval(gameState.gameInterval);
+            if (gameState.ghostInterval) clearInterval(gameState.ghostInterval);
+        }
+
+        // Победа в игре
+        function winGame() {
+            gameState.gameRunning = false;
+            document.getElementById('gameWon').style.display = 'flex';
+            
+            if (gameState.gameInterval) clearInterval(gameState.gameInterval);
+            if (gameState.ghostInterval) clearInterval(gameState.ghostInterval);
+        }
+
+        // Начало игры
+        function startGame() {
+            gameState = {
+                score: 0,
+                lives: 3,
+                level: config.level,
+                gameRunning: true,
+                gamePaused: false,
+                pacman: { x: 1, y: 1, direction: 'right' },
+                ghosts: [
+                    { x: 9, y: 8, direction: 'left', color: 'red' },
+                    { x: 8, y: 9, direction: 'up', color: 'pink' },
+                    { x: 9, y: 9, direction: 'right', color: 'blue' },
+                    { x: 10, y: 9, direction: 'down', color: 'orange' }
+                ],
+                dots: [],
+                powerPellets: [],
+                walls: [],
+                scaredTimer: 0
+            };
+            
+            document.getElementById('gameOver').style.display = 'none';
+            document.getElementById('gameWon').style.display = 'none';
+            document.getElementById('pauseBtn').textContent = 'Пауза';
+            
+            initGame();
+            
+            // Запуск игрового цикла
+            if (gameState.gameInterval) clearInterval(gameState.gameInterval);
+            gameState.gameInterval = setInterval(() => {
+                movePacman();
+                updateScaredTimer();
+            }, config.speed);
+            
+            if (gameState.ghostInterval) clearInterval(gameState.ghostInterval);
+            gameState.ghostInterval = setInterval(() => {
+                moveGhosts();
+            }, config.ghostSpeed);
+        }
+
+        // Пауза игры
+        function togglePause() {
+            if (!gameState.gameRunning) return;
+            
+            gameState.gamePaused = !gameState.gamePaused;
+            document.getElementById('pauseBtn').textContent = gameState.gamePaused ? 'Продолжить' : 'Пауза';
+        }
+
+        // Следующий уровень
+        function nextLevel() {
+            config.level++;
+            config.speed = Math.max(100, config.speed - 10); // Увеличиваем сложность
+            startGame();
+        }
+
+        // Обработчики событий
+        document.getElementById('startBtn').addEventListener('click', startGame);
+        document.getElementById('pauseBtn').addEventListener('click', togglePause);
+        document.getElementById('restartBtn').addEventListener('click', startGame);
+        document.getElementById('nextLevelBtn').addEventListener('click', nextLevel);
+        
+        // Управление с кнопок - быстрый отклик
+        document.getElementById('up').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            gameState.pacman.direction = 'up';
+            updatePacmanDirection();
+        });
+        
+        document.getElementById('down').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            gameState.pacman.direction = 'down';
+            updatePacmanDirection();
+        });
+        
+        document.getElementById('left').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            gameState.pacman.direction = 'left';
+            updatePacmanDirection();
+        });
+        
+        document.getElementById('right').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            gameState.pacman.direction = 'right';
+            updatePacmanDirection();
+        });
+        
+        // Управление с клавиатуры (для тестирования на ПК)
+        document.addEventListener('keydown', (e) => {
+            if (!gameState.gameRunning || gameState.gamePaused) return;
+            
+            switch(e.key) {
+                case 'ArrowUp':
+                    gameState.pacman.direction = 'up';
+                    updatePacmanDirection();
+                    break;
+                case 'ArrowDown':
+                    gameState.pacman.direction = 'down';
+                    updatePacmanDirection();
+                    break;
+                case 'ArrowLeft':
+                    gameState.pacman.direction = 'left';
+                    updatePacmanDirection();
+                    break;
+                case 'ArrowRight':
+                    gameState.pacman.direction = 'right';
+                    updatePacmanDirection();
+                    break;
+            }
+        });
+
+        // Инициализация при загрузке страницы
+        window.onload = initGame;
+    </script>
+</body>
+</html>
